@@ -7,7 +7,17 @@
     <title>ts-form-app</title>
   </head>
   <body>
-    <div id="app"></div>
+    <!-- http://localhost:5173/ -->
+    <div id="app">
+      <form id="registrationForm">
+        <input type="text" id="name" placeholder="Jméno" />
+        <input type="email" id="email" placeholder="Email" />
+        <input type="number" id="age" min="18" placeholder="Věk" />
+        <button type="submit">Registrovat</button>
+      </form>
+
+      <div id="output"></div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
