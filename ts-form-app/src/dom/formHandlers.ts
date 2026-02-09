@@ -3,64 +3,122 @@ import { validateUser } from "../utils/validateUser";
 import { addUser } from "../store/userStore";
 import { renderUserList } from "./userList";
 import { createUser } from "../api/userApi";
+import { getElement } from "../utils/dom";
 
-// Funkce která připojí chování k formuláři
+/**
+ * Funkce která připojí chování k formuláři
+ * spouští se při startu aplikace
+ */
 export function setupRegistrationForm(): void {
-  // Najdeme formulář
-  const form = document.getElementById("registrationForm") as HTMLFormElement;
+  /**
+   * Získání DOM elementů pomocí typed helperu
+   * už žádné "as HTMLInputElement" po celém kódu
+   */
+  const form = getElement<HTMLFormElement>("registrationForm");
+  const output = getElement<HTMLDivElement>("output");
 
-  // Najdeme výstupní div
-  const output = document.getElementById("output") as HTMLDivElement;
+  const nameInput = getElement<HTMLInputElement>("name");
+  const emailInput = getElement<HTMLInputElement>("email");
+  const ageInput = getElement<HTMLInputElement>("age");
 
-  // Posloucháme submit
+  const submitBtn = getElement<HTMLButtonElement>("submitBtn");
+
+  /**
+   * REALTIME VALIDACE
+   * kontroluje formulář při každém psaní
+   */
+  function validateFormLive(): void {
+    const user: User = {
+      name: nameInput.value,
+      email: emailInput.value,
+      age: Number(ageInput.value),
+    };
+
+    const errors = validateUser(user);
+
+    // pokud existují chyby
+    if (errors.length > 0) {
+      output.innerHTML = errors.join("<br>");
+      submitBtn.disabled = true;
+      return;
+    }
+
+    // pokud je vše OK
+    output.innerHTML = "";
+    submitBtn.disabled = false;
+  }
+
+  /**
+   * Napojení realtime validace na inputy
+   * spustí se při každém psaní
+   */
+  nameInput.addEventListener("input", validateFormLive);
+  emailInput.addEventListener("input", validateFormLive);
+  ageInput.addEventListener("input", validateFormLive);
+
+  /**
+   * SUBMIT FORMULÁŘE
+   * async protože komunikujeme s API
+   */
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    // Načtení hodnot
-    const name = (document.getElementById("name") as HTMLInputElement).value;
-    const email = (document.getElementById("email") as HTMLInputElement).value;
-    const age = Number(
-      (document.getElementById("age") as HTMLInputElement).value,
-    );
-
     const user: User = {
-      name,
-      email,
-      age,
+      name: nameInput.value,
+      email: emailInput.value,
+      age: Number(ageInput.value),
     };
 
-    // validace
     const errors = validateUser(user);
 
+    // bezpečnostní validace i při submitu
     if (errors.length > 0) {
       output.innerHTML = errors.join("<br>");
       return;
     }
 
-    // 🌀 loading stav
+    /**
+     * LOADING STAV
+     * deaktivujeme tlačítko
+     * změníme text
+     */
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Ukládám...";
+
     output.innerHTML = "Odesílám data na server...";
 
     try {
       const response = await createUser(user);
 
-      // error ze serveru
+      // chyba ze serveru
       if (response.error) {
         output.innerHTML = response.error;
         return;
       }
-      // ✅ success
+
+      // úspěch
       addUser(user);
       renderUserList();
 
       output.innerHTML = `
-      Uživatel vytvořen:<br>
-      Jméno: ${user.name}<br>
-      Email: ${user.email}<br>
-      Věk: ${user.age}
-    `;
-    } catch (err) {
+        Uživatel vytvořen:<br>
+        Jméno: ${user.name}<br>
+        Email: ${user.email}<br>
+        Věk: ${user.age}
+      `;
+
+      // reset formuláře po úspěchu
+      form.reset();
+    } catch {
       output.innerHTML = "Neočekávaná chyba aplikace.";
+    } finally {
+      /**
+       * návrat tlačítka do původního stavu
+       */
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Registrovat";
     }
+
     console.log("Odeslaný user:", user);
   });
 }
