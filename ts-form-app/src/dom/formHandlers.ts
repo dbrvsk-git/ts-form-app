@@ -4,6 +4,7 @@ import { addUser } from "../store/userStore";
 import { renderUserList } from "./userList";
 import { createUser } from "../api/userApi";
 import { getElement } from "../utils/dom";
+import { debounce } from "../utils/debounce";
 
 /**
  * Funkce která připojí chování k formuláři
@@ -48,13 +49,16 @@ export function setupRegistrationForm(): void {
     submitBtn.disabled = false;
   }
 
+  // debounce → validace se spustí až po krátké pauze v psaní
+  const debouncedValidate = debounce(validateFormLive, 300);
+
   /**
    * Napojení realtime validace na inputy
    * spustí se při každém psaní
    */
-  nameInput.addEventListener("input", validateFormLive);
-  emailInput.addEventListener("input", validateFormLive);
-  ageInput.addEventListener("input", validateFormLive);
+  nameInput.addEventListener("input", debouncedValidate);
+  emailInput.addEventListener("input", debouncedValidate);
+  ageInput.addEventListener("input", debouncedValidate);
 
   /**
    * SUBMIT FORMULÁŘE

@@ -20,7 +20,7 @@ export function loadUsers(): void {
     // JSON string -> objekt
     users = JSON.parse(data);
   } catch {
-    // pokud je data poškozená, smažeme je
+    // pokud jsou data poškozená, smažeme je
     users = [];
   }
 }
