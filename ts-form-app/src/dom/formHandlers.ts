@@ -2,6 +2,7 @@ import type { User } from "../types/user.ts";
 import { validateUser } from "../utils/validateUser";
 import { addUser } from "../store/userStore";
 import { renderUserList } from "./userList";
+import { createUser } from "../api/userApi";
 
 // Funkce která připojí chování k formuláři
 export function setupRegistrationForm(): void {
@@ -12,7 +13,7 @@ export function setupRegistrationForm(): void {
   const output = document.getElementById("output") as HTMLDivElement;
 
   // Posloucháme submit
-  form.addEventListener("submit", (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     // Načtení hodnot
@@ -36,22 +37,30 @@ export function setupRegistrationForm(): void {
       return;
     }
 
-    // přidání do store
-    addUser(user);
+    // 🌀 loading stav
+    output.innerHTML = "Odesílám data na server...";
 
-    // vykreslení seznamu
-    renderUserList();
+    try {
+      const response = await createUser(user);
 
-    // info
-    output.innerHTML = "Uživatel úspěšně přidán.";
+      // error ze serveru
+      if (response.error) {
+        output.innerHTML = response.error;
+        return;
+      }
+      // ✅ success
+      addUser(user);
+      renderUserList();
 
-    output.innerHTML = `
+      output.innerHTML = `
       Uživatel vytvořen:<br>
       Jméno: ${user.name}<br>
       Email: ${user.email}<br>
       Věk: ${user.age}
     `;
-
+    } catch (err) {
+      output.innerHTML = "Neočekávaná chyba aplikace.";
+    }
     console.log("Odeslaný user:", user);
   });
 }
